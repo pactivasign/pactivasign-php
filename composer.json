@@ -1,0 +1,57 @@
+{
+    "name": "pactivasign/pactivasign-php",
+    "description": "Official PHP client for the PactivaSign e-signature API (OAuth 2.0 with private_key_jwt and DPoP).",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["pactivasign", "e-signature", "esign", "oauth2", "dpop", "sdk"],
+    "homepage": "https://github.com/pactivasign/pactivasign-php",
+    "support": {
+        "issues": "https://github.com/pactivasign/pactivasign-php/issues",
+        "source": "https://github.com/pactivasign/pactivasign-php"
+    },
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "php-http/discovery": "^1.19",
+        "psr/clock": "^1.0",
+        "psr/http-client": "^1.0",
+        "psr/http-client-implementation": "*",
+        "psr/http-factory": "^1.0",
+        "psr/http-factory-implementation": "*",
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/log": "^2.0 || ^3.0",
+        "psr/simple-cache": "^2.0 || ^3.0",
+        "web-token/jwt-library": "^4.0.6"
+    },
+    "require-dev": {
+        "nyholm/psr7": "^1.8",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5",
+        "symfony/http-client": "^7.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "PactivaSign\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PactivaSign\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --testsuite unit",
+        "test:integration": "phpunit --testsuite integration",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "check": ["@analyse", "@test"]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
