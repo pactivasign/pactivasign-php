@@ -4,3 +4,5 @@ parameters:
         - src
         - tests
     treatPhpDocTypesAsCertain: false
+    additionalConstructors:
+        - PactivaSign\Client::initializeResources

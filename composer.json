@@ -1,9 +1,16 @@
 {
     "name": "pactivasign/pactivasign-php",
-    "description": "Official PHP client for the PactivaSign e-signature API (OAuth 2.0 with private_key_jwt and DPoP).",
+    "description": "Official PHP client for the PactivaSign e-signature API: envelopes, documents, templates and webhooks, with OAuth 2.0 private_key_jwt and DPoP.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["pactivasign", "e-signature", "esign", "oauth2", "dpop", "sdk"],
+    "keywords": [
+        "pactivasign",
+        "e-signature",
+        "esign",
+        "oauth2",
+        "dpop",
+        "sdk"
+    ],
     "homepage": "https://github.com/pactivasign/pactivasign-php",
     "support": {
         "issues": "https://github.com/pactivasign/pactivasign-php/issues",
@@ -41,10 +48,14 @@
         }
     },
     "scripts": {
+        "generate": "php tools/generate.php",
         "test": "phpunit --testsuite unit",
         "test:integration": "phpunit --testsuite integration",
         "analyse": "phpstan analyse --memory-limit=1G",
-        "check": ["@analyse", "@test"]
+        "check": [
+            "@analyse",
+            "@test"
+        ]
     },
     "config": {
         "sort-packages": true,

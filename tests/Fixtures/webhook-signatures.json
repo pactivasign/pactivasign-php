@@ -1,0 +1,34 @@
+{
+  "source": "pacta_sign src/outbound-webhooks/webhook-signature.ts (signatureHeader)",
+  "tolerance": 300,
+  "cases": [
+    {
+      "name": "single secret",
+      "body": "{\"id\":\"evt_01J9Z\",\"type\":\"envelope.completed\",\"occurredAt\":\"2026-10-22T12:00:00.000Z\",\"organizationId\":\"5b0c6c1e-8f0a-4c7e-9c1a-2f6f5a7d9e10\",\"data\":{\"envelopeId\":\"9a1f3c2e-1b4d-4e6f-8a7b-0c9d8e7f6a5b\",\"version\":7,\"status\":\"COMPLETED\",\"externalId\":\"deal-42\",\"metadata\":{\"crm\":\"hubspot\"},\"futureField\":true}}",
+      "secrets": [
+        "whsec_current"
+      ],
+      "timestamp": 1792670400,
+      "header": "t=1792670400,v1=619a37576de60a1cfddf4d677a9a20b25582049497ff94e2679c2bc98a7730c2"
+    },
+    {
+      "name": "rotation: current and previous secret",
+      "body": "{\"id\":\"evt_01J9Z\",\"type\":\"envelope.completed\",\"occurredAt\":\"2026-10-22T12:00:00.000Z\",\"organizationId\":\"5b0c6c1e-8f0a-4c7e-9c1a-2f6f5a7d9e10\",\"data\":{\"envelopeId\":\"9a1f3c2e-1b4d-4e6f-8a7b-0c9d8e7f6a5b\",\"version\":7,\"status\":\"COMPLETED\",\"externalId\":\"deal-42\",\"metadata\":{\"crm\":\"hubspot\"},\"futureField\":true}}",
+      "secrets": [
+        "whsec_current",
+        "whsec_previous"
+      ],
+      "timestamp": 1792670400,
+      "header": "t=1792670400,v1=619a37576de60a1cfddf4d677a9a20b25582049497ff94e2679c2bc98a7730c2,v1=8ec699b937de27db694df37af6b0942752bbd9e9e1a30c6f8f62700a9a9bd491"
+    },
+    {
+      "name": "unicode body",
+      "body": "{\"id\":\"evt_ü\",\"type\":\"recipient.signed\",\"occurredAt\":\"2026-10-22T12:00:00.000Z\",\"organizationId\":\"5b0c6c1e-8f0a-4c7e-9c1a-2f6f5a7d9e10\",\"data\":{\"envelopeId\":\"9a1f3c2e-1b4d-4e6f-8a7b-0c9d8e7f6a5b\",\"version\":3,\"status\":\"IN_PROGRESS\",\"externalId\":null,\"metadata\":{},\"recipient\":{\"id\":\"r1\",\"status\":\"SIGNED\",\"version\":3}}}",
+      "secrets": [
+        "whsec_current"
+      ],
+      "timestamp": 1792670400,
+      "header": "t=1792670400,v1=9a36c6cef14c221c70da4ecc9cbf99e55f7a9a94273cebc2c9003c7182508c79"
+    }
+  ]
+}

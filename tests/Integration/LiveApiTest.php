@@ -8,7 +8,10 @@ use PactivaSign\Cache\ArrayCache;
 use PactivaSign\Client;
 use PactivaSign\Exception\NotFoundException;
 use PactivaSign\Exception\PermissionException;
-use PactivaSign\Http\Multipart;
+use PactivaSign\Model\AuditEventType;
+use PactivaSign\Model\DocumentStatus;
+use PactivaSign\Model\EnvelopeStatus;
+use PactivaSign\Model\OrganizationStatus;
 use PactivaSign\Key\LocalKey;
 use PactivaSign\SystemClock;
 use PactivaSign\Tests\Support\RecordingHttpClient;
@@ -61,43 +64,70 @@ final class LiveApiTest extends TestCase
 
     public function testReadsTheCallerIdentity(): void
     {
+        $me = $this->client()->me->get();
+
+        self::assertSame((string) getenv('PACTIVASIGN_CLIENT_ID'), $me->client?->clientId);
+        $scopes = $me->scopes;
+        sort($scopes);
+        $requested = $this->scopes();
+        sort($requested);
+        self::assertSame($requested, $scopes);
+        self::assertNotSame(OrganizationStatus::Unknown, $me->organization->status);
+    }
+
+    public function testRawRequestsStillWork(): void
+    {
         $response = $this->client()->request('GET', '/api/v1/me');
 
         self::assertSame(200, $response->statusCode());
         self::assertNotNull($response->requestId());
-        self::assertIsArray($response->data());
     }
 
     public function testUploadsReadsAndDownloadsADocument(): void
     {
         $client = $this->client();
-        $pdf = self::minimalPdf();
+        $name = 'PHP SDK integration test ' . bin2hex(random_bytes(3));
 
-        $created = $client->request('POST', '/api/v1/documents/upload', [
-            'multipart' => (new Multipart())
-                ->field('name', 'PHP SDK integration test')
-                ->file('file', $pdf, 'php-sdk-test.pdf'),
-        ]);
-        self::assertSame(201, $created->statusCode());
-        $document = $created->data();
-        self::assertIsArray($document);
-        self::assertIsString($document['id'] ?? null);
+        $document = $client->documents->upload($name, self::minimalPdf(), 'php-sdk-test.pdf');
+        self::assertSame($name, $document->name);
+        self::assertNotSame(DocumentStatus::Unknown, $document->status);
 
-        $read = $client->request('GET', '/api/v1/documents/' . $document['id'])->data();
-        self::assertIsArray($read);
-        self::assertSame('PHP SDK integration test', $read['name'] ?? null);
+        $read = $client->documents->get($document->id);
+        self::assertSame($document->id, $read->id);
+        self::assertSame($name, $read->name);
 
-        $download = $client->request('GET', '/api/v1/documents/' . $document['id'] . '/file/content', [
-            'headers' => ['Accept' => 'application/pdf'],
-        ]);
-        self::assertSame('application/pdf', strtok((string) $download->header('Content-Type'), ';'));
-        self::assertStringStartsWith('%PDF-', (string) $download->body());
+        $download = $client->documents->downloadFile($document->id, variant: 'original');
+        self::assertSame('application/pdf', strtok((string) $download->contentType(), ';'));
+        self::assertStringStartsWith('%PDF-', $download->contents());
+
+        $audit = $client->documents->getAuditTrail($document->id);
+        self::assertNotEmpty($audit);
+        self::assertNotSame(AuditEventType::Unknown, $audit[0]->eventType);
+
+        $found = false;
+        foreach ($client->documents->list(['limit' => 5]) as $listed) {
+            if ($listed->id === $document->id) {
+                $found = true;
+                break;
+            }
+        }
+        self::assertTrue($found, 'the new document is in the list');
+    }
+
+    public function testListsEnvelopesPageByPage(): void
+    {
+        $page = $this->client()->envelopes->list(['limit' => 2])->firstPage();
+
+        self::assertLessThanOrEqual(2, count($page));
+        foreach ($page as $envelope) {
+            self::assertNotSame(EnvelopeStatus::Unknown, $envelope->status);
+        }
     }
 
     public function testMissingDocumentsRaiseNotFoundWithARequestId(): void
     {
         try {
-            $this->client()->request('GET', '/api/v1/documents/00000000-0000-4000-8000-000000000000');
+            $this->client()->documents->get('00000000-0000-4000-8000-000000000000');
             self::fail('expected NotFoundException');
         } catch (NotFoundException $e) {
             self::assertSame(404, $e->statusCode);
@@ -109,9 +139,9 @@ final class LiveApiTest extends TestCase
     public function testAnUngrantedScopeRaisesPermissionException(): void
     {
         try {
-            $this->client()->request('POST', '/api/v1/envelopes', [
-                'json' => ['name' => 'should not be sent', 'signers' => [['email' => 'nobody@example.com', 'name' => 'Nobody']]],
-                'idempotencyKey' => bin2hex(random_bytes(16)),
+            $this->client()->envelopes->create([
+                'name' => 'should not be sent',
+                'signers' => [['email' => 'nobody@example.com', 'name' => 'Nobody']],
             ]);
             self::fail('expected PermissionException');
         } catch (PermissionException $e) {
@@ -123,10 +153,10 @@ final class LiveApiTest extends TestCase
     public function testWorkersSharingACacheReuseOneToken(): void
     {
         $cache = new ArrayCache(new SystemClock());
-        $this->client($cache)->request('GET', '/api/v1/me');
+        $this->client($cache)->me->get();
         $this->recorder->reset();
 
-        $this->client($cache)->request('GET', '/api/v1/me');
+        $this->client($cache)->me->get();
 
         self::assertSame(['/api/v1/me'], $this->recorder->paths());
     }
@@ -144,9 +174,8 @@ final class LiveApiTest extends TestCase
         }
         $this->recorder->reset();
 
-        $response = $this->client($cache)->request('GET', '/api/v1/me');
+        $this->client($cache)->me->get();
 
-        self::assertSame(200, $response->statusCode());
         $paths = $this->recorder->paths();
         self::assertSame('/api/v1/me', $paths[0] ?? null, 'the corrupted token is tried first');
         self::assertContains('/api/v1/oauth/token', $paths);

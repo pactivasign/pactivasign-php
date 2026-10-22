@@ -2,14 +2,16 @@
 
 The official PHP client for the [PactivaSign](https://github.com/pactivasign) e-signature API.
 
-> **Status: pre-release.** This version contains the authentication and transport layer. Typed resources
-> (`$pactiva->envelopes->create(...)`), models and webhook verification come next. Until 1.0, minor
-> versions may change the API.
+> **Status: pre-release.** Until 1.0, minor versions may change the API. Built against API contract
+> `openapi-v1.0.0`.
 
 - OAuth 2.0 client credentials with `private_key_jwt` (RFC 7523): no shared secrets.
 - DPoP-bound access tokens (RFC 9449): a leaked token is useless without your DPoP key.
 - Token caching across PHP workers, DPoP nonce handling, automatic re-authentication.
 - Safe retries: only GET/HEAD and requests with an Idempotency-Key are ever resent.
+- A method for every API operation, with typed, read-only response models.
+- Lists that follow cursors for you; PDF downloads streamed to disk.
+- Webhook signature verification, with secret rotation.
 - Typed exceptions that carry the API error code and the request ID.
 
 Requires PHP 8.2+ and any PSR-18 HTTP client (Guzzle, Symfony HttpClient, …).
@@ -78,32 +80,82 @@ $pactiva = new Client(
     clientId: 'pcl_...',
     clientKey: LocalKey::fromFile('/run/secrets/pactivasign-client.jwk', logger: $logger),
     dpopKey: LocalKey::fromFile('/run/secrets/pactivasign-dpop.jwk'),
-    scopes: ['documents:create', 'documents:read', 'signing:create', 'signing:read'],
+    scopes: ['documents:create', 'documents:read', 'documents:download', 'signing:create', 'signing:read'],
     cache: $psr16Cache,                             // share tokens across PHP workers
     logger: $logger,                                // optional PSR-3
 );
 
-$me = $pactiva->request('GET', '/api/v1/me')->data();
-
-$envelopes = $pactiva->request('GET', '/api/v1/envelopes', ['query' => ['limit' => 20]])->data();
-
-$envelope = $pactiva->request('POST', '/api/v1/envelopes', [
-    'json' => ['name' => 'NDA', 'documentIds' => [$documentId], 'signers' => [['email' => 'jo@example.com', 'name' => 'Jo']]],
-    'idempotencyKey' => $orderId . '-nda',         // reuse it if you resend the same request
-])->data();
+$me = $pactiva->me->get();                          // organization, granted scopes, plan limits
 ```
 
-Uploads use `PactivaSign\Http\Multipart`:
+### Send a document for signature
 
 ```php
-use PactivaSign\Http\Multipart;
+$document = $pactiva->documents->upload('NDA', fopen('nda.pdf', 'rb'), 'nda.pdf');
 
-$document = $pactiva->request('POST', '/api/v1/documents/upload', [
-    'multipart' => (new Multipart())
-        ->field('name', 'Contract')
-        ->file('file', fopen('contract.pdf', 'rb'), 'contract.pdf'),
-])->data();
+$envelope = $pactiva->envelopes->create([
+    'name' => 'NDA with Acme',
+    'documentIds' => [$document->id],
+    'signers' => [
+        ['email' => 'jo@example.com', 'name' => 'Jo Bloggs'],
+    ],
+    'externalId' => 'deal-42',                      // your own reference; filter on it later
+]);
+
+echo $envelope->status->value;                      // "SENT"
 ```
+
+`envelopes->create()` sends an `Idempotency-Key`, so a retried call never sends the envelope twice. Pass your
+own with `idempotencyKey: "order-42-nda"` if your code may call `create()` again after a crash.
+
+Request bodies are arrays. Their exact shape is in each method's PHPDoc, so your IDE and PHPStan check
+field names and types. Dates accept `DateTimeInterface` where the API takes a date-time, and enum
+fields accept the enum's cases.
+
+### Resources
+
+| Property | Operations |
+| --- | --- |
+| `$pactiva->envelopes` | `list`, `create`, `get`, `downloadSigned`, `updateRecipient`, `resend`, `void` |
+| `$pactiva->documents` | `list`, `create`, `upload`, `get`, `rename`, `delete`, `uploadFile`, `downloadFile`, `getAuditTrail`, `downloadAuditReport`, `listFields`, `createField`, `updateField`, `deleteField`, `listRecipients`, `replaceRecipients` |
+| `$pactiva->signingRequests` | `create`, `getLatest`, `resend` |
+| `$pactiva->templates` | `list`, `get`, `listRoles`, `createDocument` |
+| `$pactiva->webhookSubscriptions` | `list`, `create`, `get`, `update`, `delete`, `rotateSecret`, `sendTest` |
+| `$pactiva->webhookDeliveries` | `list`, `redeliver` |
+| `$pactiva->me` | `get` |
+
+Each method's PHPDoc names the OAuth scopes it needs. For anything else, `$pactiva->request($method, $path, $options)`
+sends an authenticated request to any path.
+
+### Lists
+
+`list()` returns a paginator. Nothing is fetched until you iterate, and further pages are fetched as you go:
+
+```php
+foreach ($pactiva->envelopes->list(['status' => EnvelopeStatus::Sent, 'createdFrom' => new DateTime('-7 days')]) as $envelope) {
+    // every matching envelope, page after page
+}
+
+$page = $pactiva->envelopes->list(['limit' => 20])->firstPage();   // one page: $page->items, $page->nextCursor
+```
+
+### Downloads
+
+```php
+$pdf = $pactiva->envelopes->downloadSigned($envelope->id);
+$pdf->saveTo("/var/contracts/{$envelope->id}.pdf");      // streamed in chunks
+
+// Next time, skip the download if nothing changed:
+$again = $pactiva->envelopes->downloadSigned($envelope->id, ifNoneMatch: $pdf->etag());
+if ($again->isNotModified()) { /* your copy is current */ }
+```
+
+### Models
+
+Responses are read-only objects with typed properties: dates are `DateTimeImmutable`, statuses are enums
+(`EnvelopeStatus::Completed`), and nested objects are models too. The API adds fields and enum values
+over time without a new version. Unknown enum values become the `Unknown` case instead of an error, and
+`$model->toArray()` returns the raw JSON, including fields this SDK version does not know yet.
 
 ### Caching and concurrency
 
@@ -132,6 +184,8 @@ Every exception implements `PactivaSign\Exception\PactivaException`.
 | `ServerException` | 5xx |
 | `TransportException` | No response at all (DNS, TLS, timeout) |
 | `ConfigurationException` | The client was set up wrongly |
+| `SignatureVerificationException` | A webhook signature is missing, wrong or too old |
+| `UnexpectedResponseException` | A response did not match the API contract |
 
 API exceptions carry `$e->errorCode`, `$e->statusCode`, `$e->details` and `$e->requestId`. Quote the
 request ID when you contact support.
@@ -143,12 +197,59 @@ errors, 429, 502, 503 and 504, with exponential backoff and jitter. `Retry-After
 seconds. Other POST, PATCH and DELETE requests are never resent automatically, so nothing is created twice.
 Tune or disable this with `retryPolicy: new RetryPolicy(...)` or `RetryPolicy::none()`.
 
+## Webhooks
+
+Create a subscription once and store its secret:
+
+```php
+$subscription = $pactiva->webhookSubscriptions->create([
+    'url' => 'https://example.com/pactivasign/webhook',
+    'eventTypes' => ['envelope.completed', 'envelope.declined', 'recipient.signed'],
+]);
+$secret = $subscription->secret;                    // shown only now and after rotateSecret()
+```
+
+Then verify every delivery against the **raw** request body before trusting it:
+
+```php
+use PactivaSign\Exception\SignatureVerificationException;
+use PactivaSign\Model\WebhookEventType;
+use PactivaSign\Webhook\Webhook;
+
+try {
+    $event = Webhook::verify(
+        file_get_contents('php://input'),
+        $_SERVER['HTTP_PACTIVA_SIGNATURE'] ?? '',
+        [$secret, $previousSecret],                 // both, while a rotation is in progress
+    );
+} catch (SignatureVerificationException) {
+    http_response_code(400);
+    exit;
+}
+
+// Deliveries can repeat and arrive out of order:
+// skip event IDs you have seen, and events whose data->version is older than what you stored.
+if ($event->type === WebhookEventType::EnvelopeCompleted) {
+    $pactiva->envelopes->downloadSigned($event->data->envelopeId)->saveTo("/var/contracts/{$event->data->envelopeId}.pdf");
+}
+http_response_code(200);
+```
+
+Signatures older than 5 minutes are rejected, against replays. `Webhook::signatureHeader()` builds a valid
+header, for testing your endpoint.
+
 ## Development
 
 ```bash
 composer install
 composer check          # PHPStan level 8 and unit tests
+composer generate       # regenerate src/Model and src/Resource from openapi/public.json
 ```
+
+Models, enums and resource classes are generated from the API contract in `openapi/public.json`, copied
+from the API repository's `openapi-v*` tag recorded in `openapi/SOURCE.json`. Don't edit generated files
+(they say so at the top); change the generator in `tools/generate.php` or update the spec. A unit test fails
+when the generated code is stale.
 
 The integration tests run against a live API and are skipped unless these are set:
 `PACTIVASIGN_BASE_URL`, `PACTIVASIGN_CLIENT_ID`, `PACTIVASIGN_CLIENT_KEY_FILE`, `PACTIVASIGN_DPOP_KEY_FILE`
