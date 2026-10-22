@@ -20,6 +20,7 @@ use PactivaSign\Http\RetryPolicy;
 use PactivaSign\Http\Transport;
 use PactivaSign\Key\Jwk;
 use PactivaSign\Key\KeyProvider;
+use PactivaSign\Resource\ClientResources;
 use Psr\Clock\ClockInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -40,12 +41,20 @@ use Psr\SimpleCache\CacheInterface;
  *         scopes: ['documents:read', 'signing:create'],
  *         cache: $psr16Cache,
  *     );
- *     $me = $pactiva->request('GET', '/api/v1/me')->data();
+ *     $envelope = $pactiva->envelopes->create([
+ *         'name' => 'NDA',
+ *         'documentIds' => [$documentId],
+ *         'signers' => [['email' => 'jo@example.com', 'name' => 'Jo']],
+ *     ]);
+ *
+ *     foreach ($pactiva->envelopes->list(['status' => 'SENT']) as $envelope) { ... }
  *
  * Pass a shared PSR-16 cache in production, so every PHP worker reuses the same access token.
  */
 final class Client
 {
+    use ClientResources;
+
     public const VERSION = '0.1.0-dev';
 
     private readonly Environment $environment;
@@ -124,6 +133,8 @@ final class Client
             $userAgent,
             $sleep,
         );
+
+        $this->initializeResources($this->transport);
     }
 
     public function environment(): Environment
@@ -132,7 +143,7 @@ final class Client
     }
 
     /**
-     * Sends an authenticated request to any API path, e.g. `request('GET', '/api/v1/me')`.
+     * Sends an authenticated request to any API path, for endpoints this SDK version has no method for yet.
      *
      * @param array{
      *     query?: array<string, mixed>,
