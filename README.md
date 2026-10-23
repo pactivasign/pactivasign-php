@@ -76,7 +76,7 @@ use PactivaSign\Environment;
 use PactivaSign\Key\LocalKey;
 
 $pactiva = new Client(
-    environment: Environment::staging(),           // or 'https://your-api-host'
+    environment: Environment::sandbox(),           // or 'https://your-api-host'
     clientId: 'pcl_...',
     clientKey: LocalKey::fromFile('/run/secrets/pactivasign-client.jwk', logger: $logger),
     dpopKey: LocalKey::fromFile('/run/secrets/pactivasign-dpop.jwk'),
@@ -112,6 +112,31 @@ Request bodies are arrays. Their exact shape is in each method's PHPDoc, so your
 field names and types. Dates accept `DateTimeInterface` where the API takes a date-time, and enum
 fields accept the enum's cases.
 
+### Testing in the sandbox
+
+`Environment::sandbox()` points at the public sandbox. It behaves like production, except that:
+
+- email goes only to verified members of your organization; mail to anyone else (test signers, CC
+  recipients, one-time codes) is captured instead of sent;
+- signed PDFs and audit reports are watermarked "TEST - NOT LEGALLY BINDING";
+- the Free plan allows 100 documents a month, and rate limits are lower.
+
+Read captured email with `$pactiva->sandbox->listEmails()` to complete a signing flow in a test:
+
+```php
+use PactivaSign\Model\SandboxEmailType;
+
+$latest = fn (SandboxEmailType $type) => $pactiva->sandbox
+    ->listEmails(['to' => 'jo@example.com', 'type' => $type, 'limit' => 1])  // newest first
+    ->firstPage()->items[0] ?? null;
+
+$signingLink = $latest(SandboxEmailType::SigningInvitation)?->actionUrl;
+// ... open the link, request a code, then:
+$otp = $latest(SandboxEmailType::Otp)?->code;
+```
+
+Outside the sandbox, `listEmails()` raises `NotFoundException`.
+
 ### Resources
 
 | Property | Operations |
@@ -123,6 +148,7 @@ fields accept the enum's cases.
 | `$pactiva->webhookSubscriptions` | `list`, `create`, `get`, `update`, `delete`, `rotateSecret`, `sendTest` |
 | `$pactiva->webhookDeliveries` | `list`, `redeliver` |
 | `$pactiva->me` | `get` |
+| `$pactiva->sandbox` | `listEmails` (sandbox only) |
 
 Each method's PHPDoc names the OAuth scopes it needs. For anything else, `$pactiva->request($method, $path, $options)`
 sends an authenticated request to any path.

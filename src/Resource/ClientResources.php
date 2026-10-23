@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.0.0.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.0.
 
 namespace PactivaSign\Resource;
 
@@ -16,6 +16,7 @@ trait ClientResources
     public readonly Documents $documents;
     public readonly Envelopes $envelopes;
     public readonly Me $me;
+    public readonly Sandbox $sandbox;
     public readonly SigningRequests $signingRequests;
     public readonly Templates $templates;
     public readonly WebhookDeliveries $webhookDeliveries;
@@ -26,6 +27,7 @@ trait ClientResources
         $this->documents = new Documents($transport);
         $this->envelopes = new Envelopes($transport);
         $this->me = new Me($transport);
+        $this->sandbox = new Sandbox($transport);
         $this->signingRequests = new SigningRequests($transport);
         $this->templates = new Templates($transport);
         $this->webhookDeliveries = new WebhookDeliveries($transport);

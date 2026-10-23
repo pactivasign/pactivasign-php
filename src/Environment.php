@@ -12,7 +12,8 @@ use PactivaSign\Exception\ConfigurationException;
  */
 final class Environment
 {
-    public const STAGING_URL = 'https://pactiva-api.duckdns.org';
+    /** The public sandbox: test signers' email is captured, signed PDFs are watermarked. */
+    public const SANDBOX_URL = 'https://pactiva-sandbox-api.pactivasign.com';
 
     /** Origin of the API, without a trailing slash, e.g. https://api.example.com */
     public readonly string $baseUrl;
@@ -33,9 +34,9 @@ final class Environment
         $this->baseUrl = $baseUrl;
     }
 
-    public static function staging(): self
+    public static function sandbox(): self
     {
-        return new self(self::STAGING_URL);
+        return new self(self::SANDBOX_URL);
     }
 
     public function tokenEndpoint(): string

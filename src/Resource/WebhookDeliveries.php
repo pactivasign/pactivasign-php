@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.0.0.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.0.
 
 namespace PactivaSign\Resource;
 

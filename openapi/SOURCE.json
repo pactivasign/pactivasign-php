@@ -1,6 +1,6 @@
 {
-  "tag": "openapi-v1.0.0",
-  "commit": "42095e1afa10945dae89b7e8a9ccf81ff353ae96",
+  "tag": "openapi-v1.1.0",
+  "commit": "6136f65793848d41c0e0093aa93a67ce7f9510da",
   "path": "openapi/public.json",
-  "sha256": "a7d2f8c48bd9f6fb172aa9b833669be3e79136710cc5e81139feee6e05b8043f"
+  "sha256": "1749c607f7bc4239c31c902bb6d46af1b8b10c708a747d57ff2321d27e5ee39d"
 }

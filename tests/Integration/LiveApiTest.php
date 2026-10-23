@@ -6,12 +6,14 @@ namespace PactivaSign\Tests\Integration;
 
 use PactivaSign\Cache\ArrayCache;
 use PactivaSign\Client;
+use PactivaSign\Environment;
 use PactivaSign\Exception\NotFoundException;
 use PactivaSign\Exception\PermissionException;
 use PactivaSign\Model\AuditEventType;
 use PactivaSign\Model\DocumentStatus;
 use PactivaSign\Model\EnvelopeStatus;
 use PactivaSign\Model\OrganizationStatus;
+use PactivaSign\Model\SandboxEmailType;
 use PactivaSign\Key\LocalKey;
 use PactivaSign\SystemClock;
 use PactivaSign\Tests\Support\RecordingHttpClient;
@@ -22,7 +24,7 @@ use Symfony\Component\HttpClient\Psr18Client;
 /**
  * Runs the SDK against a real PactivaSign API. Skipped unless these are set:
  *
- *   PACTIVASIGN_BASE_URL         e.g. https://pactiva-api.duckdns.org
+ *   PACTIVASIGN_BASE_URL         e.g. https://pactiva-sandbox-api.pactivasign.com
  *   PACTIVASIGN_CLIENT_ID        pcl_...
  *   PACTIVASIGN_CLIENT_KEY_FILE  private JWK or PEM registered for the client
  *   PACTIVASIGN_DPOP_KEY_FILE    private JWK or PEM for DPoP (not registered)
@@ -147,6 +149,20 @@ final class LiveApiTest extends TestCase
         } catch (PermissionException $e) {
             self::assertSame(403, $e->statusCode);
             self::assertSame('insufficient_scope', $e->errorCode);
+        }
+    }
+
+    public function testTheSandboxInboxExistsOnlyInTheSandbox(): void
+    {
+        $client = $this->client();
+        if ($client->environment()->baseUrl !== Environment::SANDBOX_URL) {
+            $this->expectException(NotFoundException::class);
+        }
+
+        $page = $client->sandbox->listEmails(['limit' => 5])->firstPage();
+
+        foreach ($page as $email) {
+            self::assertNotSame(SandboxEmailType::Unknown, $email->type);
         }
     }
 
