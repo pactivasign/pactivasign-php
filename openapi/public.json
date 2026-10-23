@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "PactivaSign API",
-    "version": "1.0.0-beta.1",
+    "version": "1.1.0-beta.1",
     "description": "Server-to-server API for sending documents for signature and following them to completion.\n\n**Authentication.** OAuth 2.0 client credentials with `private_key_jwt` (RFC 7523) and DPoP-bound tokens (RFC 9449).\nGet a token at `POST /api/v1/oauth/token`, then send `Authorization: DPoP <token>` and a fresh `DPoP` proof on every call.\nOn `401 use_dpop_nonce`, retry once with the `DPoP-Nonce` value from the response. Each operation lists its scopes in `x-oauth-scopes`.\n\n**Responses.** JSON bodies are `{ \"success\": true, \"data\": … }`. Errors are `{ \"success\": false, \"error\": { \"code\", \"message\", \"requestId\", \"details\" } }`,\nexcept failures in the OAuth layer, which use the RFC 6749 shape `{ \"error\", \"error_description\" }`. Every response carries `X-Request-Id`.\n\n**Pagination.** Lists take `limit` and `cursor` and return `nextCursor`; pass it back as `cursor` until it is null.\n\n**Retries.** `POST /envelopes` accepts an `Idempotency-Key`; reuse it on every retry of the same send. Honour `Retry-After` on 429.\nRate limits are reported in the `RateLimit-Policy` and `RateLimit` headers.\n\n**Webhooks.** Subscribe with `/webhook-subscriptions`. Deliveries are signed in `Pactiva-Signature`; verify it over the raw body,\ndeduplicate on the event `id` and order by `data.version`. Bodies are described by the `WebhookEvent` schema; `x-webhook-events` lists the types.\n\n**Compatibility.** Within `/api/v1` changes are additive: new fields, endpoints, event types and enum values can appear at any time,\nso clients must ignore unknown fields and treat unknown enum values as unknown, not as errors. Fields not listed here are not part of the contract."
   },
   "servers": [
@@ -31,6 +31,10 @@
     {
       "name": "recipients",
       "description": "Recipient slots on a draft document."
+    },
+    {
+      "name": "sandbox",
+      "description": "Sandbox-only helpers for testing an integration. Not available in production."
     },
     {
       "name": "signing",
@@ -6392,6 +6396,269 @@
         "x-oauth-scopes": []
       }
     },
+    "/api/v1/sandbox/emails": {
+      "get": {
+        "description": "In the sandbox, email goes only to verified members of your organization. Mail to anyone else (test signers, CC recipients) is captured here instead, with its signing link in actionUrl and one-time codes in code, so tests can complete a signing flow. Returns 404 outside the sandbox.",
+        "operationId": "sandbox.listEmails",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 25). Omit limit, cursor, and page to get every row in one response.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "nextCursor from the previous page. Opaque. Do not send with page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number. Jumps directly (page 4 is the 4th page). Do not send with cursor.",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Only emails to this address.",
+            "schema": {
+              "format": "email",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SandboxEmailType"
+            }
+          },
+          {
+            "name": "signingRequestId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SandboxEmail"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Pass back as `cursor` for the next page. Null on the last page."
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "Only when `page` was requested."
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Only when `page` was requested."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Only when `page` was requested."
+                    },
+                    "pageCount": {
+                      "type": "integer",
+                      "description": "Only when `page` was requested."
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimit-Policy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input (`VALIDATION_ERROR`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials, or a bad DPoP proof (OAuth error body).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OAuthErrorResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope (OAuth error body), plan limit or inactive subscription.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OAuthErrorResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the calling organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited. Retry after `Retry-After` seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OAuthErrorResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimit-Policy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              }
+            }
+          },
+          "500": {
+            "description": "Server error. Safe to retry with backoff for idempotent calls.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2-dpop": [
+              "signing:read"
+            ],
+            "dpop-proof": []
+          }
+        ],
+        "summary": "Sandbox only: emails captured instead of sent, newest first",
+        "tags": [
+          "sandbox"
+        ],
+        "x-oauth-scopes": [
+          "signing:read"
+        ]
+      }
+    },
     "/api/v1/webhook-deliveries": {
       "get": {
         "operationId": "webhookDeliveries.list",
@@ -10028,6 +10295,80 @@
             "description": "Re-invite only this recipient. Omit to re-invite everyone whose turn it is."
           }
         }
+      },
+      "SandboxEmail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SandboxEmailType"
+              }
+            ]
+          },
+          "to": {
+            "type": "string",
+            "format": "email"
+          },
+          "subject": {
+            "type": "string",
+            "example": "Please sign: NDA"
+          },
+          "text": {
+            "type": "string",
+            "description": "The plain-text body as it would have been sent."
+          },
+          "actionUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "description": "The link the email asks the recipient to open: the signing link of an invitation, the copy link of a CC email."
+          },
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "example": "482913",
+            "description": "The one-time code of an OTP email."
+          },
+          "signingRequestId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "to",
+          "subject",
+          "text",
+          "actionUrl",
+          "code",
+          "signingRequestId",
+          "createdAt"
+        ]
+      },
+      "SandboxEmailType": {
+        "type": "string",
+        "enum": [
+          "SIGNING_INVITATION",
+          "OTP",
+          "REMINDER",
+          "COMPLETION",
+          "CARBON_COPY",
+          "DECLINED",
+          "ACCOUNT_VERIFICATION",
+          "VOIDED",
+          "EXPIRED"
+        ]
       },
       "SignerParticipantStatus": {
         "type": "string",

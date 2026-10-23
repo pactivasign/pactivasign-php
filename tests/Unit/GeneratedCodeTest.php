@@ -60,6 +60,6 @@ final class GeneratedCodeTest extends TestCase
                 $count++;
             }
         }
-        self::assertSame(40, $count);
+        self::assertSame(41, $count);
     }
 }

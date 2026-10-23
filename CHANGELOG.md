@@ -8,8 +8,10 @@ All notable changes to this package are documented here. The format follows
 
 ### Added
 
-- Typed methods for all 40 operations of API contract `openapi-v1.0.0`: `$pactiva->envelopes`, `documents`,
-  `signingRequests`, `templates`, `webhookSubscriptions`, `webhookDeliveries` and `me`.
+- Typed methods for all 41 operations of API contract `openapi-v1.1.0`: `$pactiva->envelopes`, `documents`,
+  `signingRequests`, `templates`, `webhookSubscriptions`, `webhookDeliveries`, `me` and `sandbox`.
+- `Environment::sandbox()` for the public sandbox, and `$pactiva->sandbox->listEmails()` to read the email
+  it captures (signing links and one-time codes) in tests.
 - Read-only response models with `DateTimeImmutable` dates, enums with an `Unknown` case for values added
   later, and `toArray()` returning the raw JSON.
 - Request bodies as arrays with exact PHPStan shapes; `DateTimeInterface` and enum cases accepted.

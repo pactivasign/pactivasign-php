@@ -34,7 +34,7 @@ use Psr\SimpleCache\CacheInterface;
  * PactivaSign API client.
  *
  *     $pactiva = new PactivaSign\Client(
- *         environment: PactivaSign\Environment::staging(),
+ *         environment: PactivaSign\Environment::sandbox(),
  *         clientId: 'pcl_...',
  *         clientKey: PactivaSign\Key\LocalKey::fromFile('/run/secrets/pactiva-client.jwk'),
  *         dpopKey: PactivaSign\Key\LocalKey::fromFile('/run/secrets/pactiva-dpop.jwk'),
