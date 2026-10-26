@@ -2,13 +2,13 @@
   "openapi": "3.0.0",
   "info": {
     "title": "PactivaSign API",
-    "version": "1.1.0-beta.1",
+    "version": "1.1.1-beta.1",
     "description": "Server-to-server API for sending documents for signature and following them to completion.\n\n**Authentication.** OAuth 2.0 client credentials with `private_key_jwt` (RFC 7523) and DPoP-bound tokens (RFC 9449).\nGet a token at `POST /api/v1/oauth/token`, then send `Authorization: DPoP <token>` and a fresh `DPoP` proof on every call.\nOn `401 use_dpop_nonce`, retry once with the `DPoP-Nonce` value from the response. Each operation lists its scopes in `x-oauth-scopes`.\n\n**Responses.** JSON bodies are `{ \"success\": true, \"data\": … }`. Errors are `{ \"success\": false, \"error\": { \"code\", \"message\", \"requestId\", \"details\" } }`,\nexcept failures in the OAuth layer, which use the RFC 6749 shape `{ \"error\", \"error_description\" }`. Every response carries `X-Request-Id`.\n\n**Pagination.** Lists take `limit` and `cursor` and return `nextCursor`; pass it back as `cursor` until it is null.\n\n**Retries.** `POST /envelopes` accepts an `Idempotency-Key`; reuse it on every retry of the same send. Honour `Retry-After` on 429.\nRate limits are reported in the `RateLimit-Policy` and `RateLimit` headers.\n\n**Webhooks.** Subscribe with `/webhook-subscriptions`. Deliveries are signed in `Pactiva-Signature`; verify it over the raw body,\ndeduplicate on the event `id` and order by `data.version`. Bodies are described by the `WebhookEvent` schema; `x-webhook-events` lists the types.\n\n**Compatibility.** Within `/api/v1` changes are additive: new fields, endpoints, event types and enum values can appear at any time,\nso clients must ignore unknown fields and treat unknown enum values as unknown, not as errors. Fields not listed here are not part of the contract."
   },
   "servers": [
     {
-      "url": "https://pactiva-api.duckdns.org",
-      "description": "Staging"
+      "url": "https://pactiva-sandbox-api.pactivasign.com",
+      "description": "Sandbox"
     }
   ],
   "tags": [

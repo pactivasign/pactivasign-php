@@ -6,9 +6,13 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-26
+
+First public release. Pre-1.0: minor versions may contain breaking changes.
+
 ### Added
 
-- Typed methods for all 41 operations of API contract `openapi-v1.1.0`: `$pactiva->envelopes`, `documents`,
+- Typed methods for all 41 operations of API contract `openapi-v1.1.1`: `$pactiva->envelopes`, `documents`,
   `signingRequests`, `templates`, `webhookSubscriptions`, `webhookDeliveries`, `me` and `sandbox`.
 - `Environment::sandbox()` for the public sandbox, and `$pactiva->sandbox->listEmails()` to read the email
   it captures (signing links and one-time codes) in tests.
@@ -28,3 +32,6 @@ All notable changes to this package are documented here. The format follows
 - Retries with backoff for safe requests (GET, HEAD, and requests with an Idempotency-Key).
 - Typed exceptions mapped from the API's error codes.
 - `Client::request()` for any API path, with JSON, multipart and raw bodies.
+
+[Unreleased]: https://github.com/pactivasign/pactivasign-php/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/pactivasign/pactivasign-php/releases/tag/v0.1.0
