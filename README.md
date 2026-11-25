@@ -46,7 +46,7 @@ $dpopKey = LocalKey::generate('ES256');
 file_put_contents('dpop.jwk', $dpopKey->exportPrivateJwk());
 chmod('dpop.jwk', 0600);
 
-// Give this to your PactivaSign organization admin to register the OAuth client:
+// Give this to your PactivaSign workspace admin to register the OAuth client:
 echo json_encode($clientKey->registrationJwk(), JSON_PRETTY_PRINT);
 ```
 
@@ -85,8 +85,27 @@ $pactiva = new Client(
     logger: $logger,                                // optional PSR-3
 );
 
-$me = $pactiva->me->get();                          // organization, granted scopes, plan limits
+$me = $pactiva->me->get();                          // workspace, granted scopes, plan limits
 ```
+
+### Several workspaces
+
+A client belongs to an account and is approved for one or more of its workspaces, with scopes in each. With one
+workspace there is nothing to set. With several, choose one: every request sends it as `X-Workspace-Id`.
+
+```php
+$me = $pactiva->me->get();
+foreach ($me->workspaces as $workspace) {
+    echo "{$workspace->name}: {$workspace->id}\n";      // the workspaces this client may use
+}
+
+$pactiva = new Client(/* … */, workspaceId: '3f1c…');   // a default for every call
+$legal = $pactiva->withWorkspace('8a2e…');              // another workspace, same token
+$legal->envelopes->create([/* … */]);
+```
+
+Without a workspace, a client approved for several gets `WORKSPACE_REQUIRED`; a workspace it is not approved for
+answers 403.
 
 ### Send a document for signature
 
@@ -116,7 +135,7 @@ fields accept the enum's cases.
 
 `Environment::sandbox()` points at the public sandbox. It behaves like production, except that:
 
-- email goes only to verified members of your organization; mail to anyone else (test signers, CC
+- email goes only to verified members of your workspace; mail to anyone else (test signers, CC
   recipients, one-time codes) is captured instead of sent;
 - signed PDFs and audit reports are watermarked "TEST - NOT LEGALLY BINDING";
 - the Free plan allows 100 documents a month, and rate limits are lower.
@@ -202,11 +221,11 @@ Every exception implements `PactivaSign\Exception\PactivaException`.
 | `ValidationException` | 400 or 422: the request was invalid |
 | `AuthenticationException` | 401, or the token endpoint refused the client |
 | `PermissionException` | 403, including a scope the client was not granted |
-| `NotFoundException` | 404 (also for another organization's resources) |
+| `NotFoundException` | 404 (also for another workspace's resources) |
 | `ConflictException` | 409: the resource is in the wrong state |
 | `IdempotencyConflictException` | The Idempotency-Key was reused for a different request |
 | `RateLimitException` | 429; see `$e->retryAfter` |
-| `PlanLimitException` | The organization's plan does not allow this |
+| `PlanLimitException` | The workspace's plan does not allow this |
 | `ServerException` | 5xx |
 | `TransportException` | No response at all (DNS, TLS, timeout) |
 | `ConfigurationException` | The client was set up wrongly |

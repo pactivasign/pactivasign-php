@@ -330,6 +330,10 @@ final class SdkGenerator
         // Query and header parameters.
         $queryShape = [];
         foreach ($operation['parameters'] ?? [] as $parameter) {
+            // Shared parameters ($ref) are X-Workspace-Id, which the client sends itself (withWorkspace()).
+            if (isset($parameter['$ref'])) {
+                continue;
+            }
             $parameterName = $parameter['name'];
             if ($parameter['in'] === 'query') {
                 if ($isPage) {

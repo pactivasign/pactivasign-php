@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Resource;
 
 use PactivaSign\Auth\Jws;
 use PactivaSign\Http\Download;
 use PactivaSign\Model\Envelope;
+use PactivaSign\Model\SigningCorrection;
 use PactivaSign\Pagination\Paginator;
 
 /**
@@ -79,7 +80,15 @@ final class Envelopes extends ApiResource
      *         }>,
      *     }>,
      *     sequential?: bool,
-     *     expiresAt?: string,
+     *     expiresAt?: string|null,
+     *     requireSignerOtp?: bool,
+     *     message?: string|null,
+     *     reminders?: array{
+     *         enabled?: bool,
+     *         firstReminderAfterDays?: int|float,
+     *         repeatEveryDays?: int|float,
+     *         maxReminders?: int|float,
+     *     },
      *     signers: list<array{
      *         email: string,
      *         name: string,
@@ -120,6 +129,83 @@ final class Envelopes extends ApiResource
     }
 
     /**
+     * The certificate of completion. 409 NOT_READY until the envelope is COMPLETED.
+     *
+     * Who signed, when, from which IP address and location, and how each signer was verified. The same pages are at the end of the signed PDF from GET /envelopes/:id/documents/combined.
+     *
+     * Scopes: documents:download.
+     *
+     * `GET /api/v1/envelopes/{id}/certificate` (envelopes.downloadCertificate)
+     *
+     * @throws \PactivaSign\Exception\PactivaException
+     */
+    public function downloadCertificate(string $id): Download
+    {
+        return new Download($this->transport->send('GET', self::path('/api/v1/envelopes/%s/certificate', $id), [
+            'headers' => ['Accept' => 'application/pdf'],
+        ]));
+    }
+
+    /**
+     * Recipients and fields of a sent envelope, ready to correct. Fields are on the combined packet's pages (documentId in the response). correctable is false once someone has signed.
+     *
+     * Scopes: signing:manage.
+     *
+     * `GET /api/v1/envelopes/{id}/correction` (envelopes.getCorrection)
+     *
+     * @throws \PactivaSign\Exception\PactivaException
+     */
+    public function getCorrection(string $id): SigningCorrection
+    {
+        return self::one($this->transport->send('GET', self::path('/api/v1/envelopes/%s/correction', $id)), SigningCorrection::class);
+    }
+
+    /**
+     * Correct a sent envelope that nobody has signed: replace its recipients and fields in one step. Signers keep their link and see the change when they next load it. Only new recipients and changed addresses are emailed. The envelope's version goes up.
+     *
+     * Scopes: signing:manage.
+     *
+     * `PUT /api/v1/envelopes/{id}/correction` (envelopes.correct)
+     *
+     * @param array{
+     *     recipients: list<array{
+     *         id?: string,
+     *         ref?: string,
+     *         email: string,
+     *         name: string,
+     *         role: 'SIGNER'|'CC'|'CUSTOM'|\PactivaSign\Model\DocumentRecipientRole,
+     *         customRoleId?: string,
+     *         signingOrder?: int|float,
+     *     }>,
+     *     fields: list<array{
+     *         type: 'SIGNATURE'|'INITIAL'|'NAME'|'EMAIL'|'DATE'|'TEXT'|'CHECKBOX'|'RADIO'|'DROPDOWN'|\PactivaSign\Model\FieldType,
+     *         page: int|float,
+     *         x: int|float,
+     *         y: int|float,
+     *         width: int|float,
+     *         height: int|float,
+     *         required?: bool,
+     *         fontFamily?: 'ARIAL'|'CALIBRI'|'COURIER_NEW'|'LUCIDA_CONSOLE'|'TAHOMA'|'TIMES_NEW_ROMAN'|'TREBUCHET'|'VERDANA',
+     *         fontSize?: int|float,
+     *         bold?: bool,
+     *         italic?: bool,
+     *         underline?: bool,
+     *         defaultValue?: string|bool,
+     *         metadata?: array<string, mixed>,
+     *         id?: string,
+     *         recipient?: string|null,
+     *     }>,
+     * } $params
+     * @throws \PactivaSign\Exception\PactivaException
+     */
+    public function correct(string $id, array $params): SigningCorrection
+    {
+        return self::one($this->transport->send('PUT', self::path('/api/v1/envelopes/%s/correction', $id), [
+            'json' => self::normalize($params),
+        ]), SigningCorrection::class);
+    }
+
+    /**
      * The signed PDF. 409 NOT_READY until the envelope is COMPLETED. ETag is the SHA-256 of the file.
      *
      * Scopes: documents:download.
@@ -157,6 +243,25 @@ final class Envelopes extends ApiResource
     public function updateRecipient(string $id, string $recipientId, array $params = []): Envelope
     {
         return self::one($this->transport->send('PATCH', self::path('/api/v1/envelopes/%s/recipients/%s', $id, $recipientId), [
+            'json' => (object) self::normalize($params),
+        ]), Envelope::class);
+    }
+
+    /**
+     * Email a reminder with a new signing link to recipients waiting to sign, or to one of them. Uses reminder email copy. Earlier links keep working. Shares the resend rate limit (one per recipient every 10 minutes and 10 a day); 429 with Retry-After when every target is limited. Does not count toward automatic maxReminders.
+     *
+     * Scopes: signing:manage.
+     *
+     * `POST /api/v1/envelopes/{id}/remind` (envelopes.remind)
+     *
+     * @param array{
+     *     recipientId?: string,
+     * } $params
+     * @throws \PactivaSign\Exception\PactivaException
+     */
+    public function remind(string $id, array $params = []): Envelope
+    {
+        return self::one($this->transport->send('POST', self::path('/api/v1/envelopes/%s/remind', $id), [
             'json' => (object) self::normalize($params),
         ]), Envelope::class);
     }

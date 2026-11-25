@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -12,13 +12,18 @@ final class SigningRequest extends Model
 
     public readonly string $documentId;
 
-    public readonly string $organizationId;
+    public readonly string $workspaceId;
 
     public readonly SigningRequestStatus $status;
 
     public readonly bool $sequential;
 
     public readonly ?\DateTimeImmutable $expiresAt;
+
+    /**
+     * The sender's note to recipients.
+     */
+    public readonly ?string $message;
 
     public readonly \DateTimeImmutable $createdAt;
 
@@ -43,10 +48,11 @@ final class SigningRequest extends Model
 
         $this->id = $this->string('id');
         $this->documentId = $this->string('documentId');
-        $this->organizationId = $this->string('organizationId');
+        $this->workspaceId = $this->string('workspaceId');
         $this->status = $this->enum('status', SigningRequestStatus::class);
         $this->sequential = $this->bool('sequential');
         $this->expiresAt = $this->has('expiresAt') ? $this->date('expiresAt') : null;
+        $this->message = $this->has('message') ? $this->string('message') : null;
         $this->createdAt = $this->date('createdAt');
         $this->updatedAt = $this->date('updatedAt');
         $this->signers = $this->models('signers', SigningRequestSigner::class);

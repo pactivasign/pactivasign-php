@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -11,6 +11,7 @@ enum PlanCode: string
     case Free = 'FREE';
     case Pro = 'PRO';
     case Enterprise = 'ENTERPRISE';
+    case FreeLegacy = 'FREE_LEGACY';
 
     /** A value added to the API after this SDK version. The raw value is in the model's toArray(). */
     case Unknown = 'unknown';

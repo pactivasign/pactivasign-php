@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
-final class MeOrganization extends Model
+final class MeWorkspace extends Model
 {
     public readonly string $id;
 
@@ -14,7 +14,7 @@ final class MeOrganization extends Model
 
     public readonly string $slug;
 
-    public readonly OrganizationStatus $status;
+    public readonly WorkspaceStatus $status;
 
     /**
      * @param array<string, mixed> $data
@@ -26,6 +26,6 @@ final class MeOrganization extends Model
         $this->id = $this->string('id');
         $this->name = $this->string('name');
         $this->slug = $this->string('slug');
-        $this->status = $this->enum('status', OrganizationStatus::class);
+        $this->status = $this->enum('status', WorkspaceStatus::class);
     }
 }

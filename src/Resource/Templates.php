@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Resource;
 
@@ -19,7 +19,7 @@ use PactivaSign\Pagination\Paginator;
 final class Templates extends ApiResource
 {
     /**
-     * List templates in the current organization
+     * List templates in the current workspace
      *
      * Archived templates are omitted unless status is ARCHIVED or ALL.
      *

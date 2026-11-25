@@ -6,6 +6,31 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-25
+
+Pre-1.0 minor release with breaking changes: the API renamed Organization to Workspace (contract
+`openapi-v2.0.0`).
+
+### Changed
+
+- **Breaking:** every `organizationId` property is now `workspaceId`, on documents, envelopes, templates,
+  signing requests, audit events, sandbox emails and webhook events.
+- **Breaking:** `$pactiva->me->get()` returns `$me->workspace` (a `MeWorkspace`) instead of
+  `$me->organization`, and `OrganizationStatus` is now `WorkspaceStatus`.
+- `AuditEventType` gains `WorkspaceSettingsUpdated` and `WorkspaceStatusChanged`. Events recorded before the
+  rename keep `OrganizationSettingsUpdated` and `OrganizationStatusChanged`, so handle both.
+
+### Added
+
+- Several workspaces per client: a `workspaceId` constructor argument and `$pactiva->withWorkspace($id)` send
+  `X-Workspace-Id`, and `$me->workspaces` lists the workspaces the client is approved for, with its scopes in each.
+  `$me->accountId` names the account. `ErrorCode::WorkspaceRequired` when a choice is needed.
+- `WebhookEvent::$accountId`, alongside `workspaceId`.
+- `ErrorCode::CaptchaFailed` and `ErrorCode::EmailNotAllowed` (sign-up checks), and `PlanCode::FreeLegacy` for
+  accounts that keep the Free limits they had before the new Free plan.
+- Models added to the API since 0.1.0, including signing corrections (`SigningCorrection`,
+  `CorrectionRecipient`, `CorrectionField`) and `DocumentEnvelope`.
+
 ## [0.1.0] - 2026-10-26
 
 First public release. Pre-1.0: minor versions may contain breaking changes.

@@ -152,6 +152,33 @@ final class ClientTest extends TestCase
         self::assertSame('api-nonce-1', JwtAssert::verified($calls[1]['request']->getHeaderLine('DPoP'))['claims']['nonce']);
     }
 
+    public function testSendsTheChosenWorkspaceAndCanSwitchPerCall(): void
+    {
+        // Two Client instances fetch a token each; the withWorkspace() copy reuses its parent's.
+        $this->http
+            ->then(Http::token())
+            ->then(Http::response(200, ['success' => true, 'data' => []]))
+            ->then(Http::token())
+            ->then(Http::response(200, ['success' => true, 'data' => []]))
+            ->then(Http::response(200, ['success' => true, 'data' => []]));
+
+        $plain = $this->client();
+        $plain->request('GET', '/api/v1/documents');
+        $pinned = $this->client(workspaceId: 'ws-default');
+        $pinned->request('GET', '/api/v1/documents');
+        $other = $pinned->withWorkspace('ws-other');
+        $other->request('GET', '/api/v1/documents');
+
+        $calls = $this->http->sentTo('/api/v1/documents');
+        self::assertSame('', $calls[0]['request']->getHeaderLine('X-Workspace-Id'));
+        self::assertSame('ws-default', $calls[1]['request']->getHeaderLine('X-Workspace-Id'));
+        self::assertSame('ws-other', $calls[2]['request']->getHeaderLine('X-Workspace-Id'));
+        self::assertSame('ws-default', $pinned->workspaceId());
+        self::assertSame('ws-other', $other->workspaceId());
+        self::assertNotSame($pinned->documents, $other->documents);
+        self::assertCount(2, $this->http->sentTo('/api/v1/oauth/token'), 'the copy shares its parent\'s token');
+    }
+
     public function testRejectedTokenIsReplacedOnceAndTheRequestReplayed(): void
     {
         $invalid = Http::response(401, ['error' => 'invalid_token', 'error_description' => 'revoked'], [
@@ -422,6 +449,7 @@ final class ClientTest extends TestCase
         ?TokenLock $lock = null,
         ?RetryPolicy $retry = null,
         ?\Closure $sleep = null,
+        ?string $workspaceId = null,
     ): Client {
         $factory = new Psr17Factory();
 
@@ -442,6 +470,7 @@ final class ClientTest extends TestCase
             sleep: $sleep ?? function (int $microseconds): void {
                 $this->sleeps[] = $microseconds;
             },
+            workspaceId: $workspaceId,
         );
     }
 }

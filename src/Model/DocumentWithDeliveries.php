@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -10,7 +10,7 @@ final class DocumentWithDeliveries extends Model
 {
     public readonly string $id;
 
-    public readonly string $organizationId;
+    public readonly string $workspaceId;
 
     public readonly string $name;
 
@@ -40,10 +40,21 @@ final class DocumentWithDeliveries extends Model
     public readonly ?\DateTimeImmutable $completedAt;
 
     /**
+     * Recipients saved on the document, in order: the same rows as GET /documents/{id}/recipients.
+     * @var list<DocumentRecipient>
+     */
+    public readonly array $recipients;
+
+    /**
      * One per signer on the latest signing request.
      * @var list<DocumentDelivery>
      */
     public readonly array $deliveries;
+
+    /**
+     * The envelope this document was sent in; null for a document sent on its own.
+     */
+    public readonly ?DocumentEnvelope $envelope;
 
     /**
      * @param array<string, mixed> $data
@@ -53,7 +64,7 @@ final class DocumentWithDeliveries extends Model
         parent::__construct($data);
 
         $this->id = $this->string('id');
-        $this->organizationId = $this->string('organizationId');
+        $this->workspaceId = $this->string('workspaceId');
         $this->name = $this->string('name');
         $this->status = $this->enum('status', DocumentStatus::class);
         $this->createdById = $this->has('createdById') ? $this->string('createdById') : null;
@@ -63,6 +74,8 @@ final class DocumentWithDeliveries extends Model
         $this->createdAt = $this->date('createdAt');
         $this->updatedAt = $this->date('updatedAt');
         $this->completedAt = $this->has('completedAt') ? $this->date('completedAt') : null;
+        $this->recipients = $this->models('recipients', DocumentRecipient::class);
         $this->deliveries = $this->models('deliveries', DocumentDelivery::class);
+        $this->envelope = $this->has('envelope') ? $this->model('envelope', DocumentEnvelope::class) : null;
     }
 }

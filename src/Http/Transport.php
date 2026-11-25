@@ -41,6 +41,9 @@ final class Transport
     /** @var \Closure(int): void */
     private readonly \Closure $sleep;
 
+    /** Sent as X-Workspace-Id on every request unless the request sets its own. */
+    private ?string $workspaceId = null;
+
     /**
      * @param (\Closure(int): void)|null $sleep microseconds; replaced in tests
      */
@@ -58,6 +61,20 @@ final class Transport
         ?\Closure $sleep = null,
     ) {
         $this->sleep = $sleep ?? static fn (int $microseconds) => usleep($microseconds);
+    }
+
+    /** A copy that works in another workspace; the token, nonces and retry state stay shared. */
+    public function withWorkspace(?string $workspaceId): self
+    {
+        $copy = clone $this;
+        $copy->workspaceId = $workspaceId;
+
+        return $copy;
+    }
+
+    public function workspaceId(): ?string
+    {
+        return $this->workspaceId;
     }
 
     /**
@@ -81,6 +98,9 @@ final class Transport
 
         [$body, $contentType] = $this->body($options);
         $headers = ($options['headers'] ?? []) + ['Accept' => 'application/json'];
+        if ($this->workspaceId !== null && !isset($headers['X-Workspace-Id'])) {
+            $headers['X-Workspace-Id'] = $this->workspaceId;
+        }
         if ($contentType !== null) {
             $headers['Content-Type'] = $contentType;
         }

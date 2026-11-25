@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Resource;
 
@@ -24,7 +24,7 @@ use PactivaSign\Pagination\Paginator;
 final class Documents extends ApiResource
 {
     /**
-     * List documents in the current organization, newest first
+     * List documents in the current workspace, newest first
      *
      * Omit limit, cursor, and page for every row. Pass page (1-based) and optional limit to jump to that page; the response includes total and pageCount. Or pass limit and then nextCursor as cursor.
      *
@@ -35,6 +35,8 @@ final class Documents extends ApiResource
      * @param array{
      *     limit?: int|float,
      *     page?: int|float,
+     *     groupEnvelopes?: bool,
+     *     status?: list<'DRAFT'|'PREPARING'|'SENT'|'IN_PROGRESS'|'FINALIZING'|'COMPLETED'|'DECLINED'|'EXPIRED'|'VOIDED'|\PactivaSign\Model\DocumentStatus>,
      * } $query
      * @return Paginator<DocumentWithDeliveries>
      * @throws \PactivaSign\Exception\PactivaException
@@ -165,6 +167,24 @@ final class Documents extends ApiResource
     public function downloadAuditReport(string $id): Download
     {
         return new Download($this->transport->send('GET', self::path('/api/v1/documents/%s/audit/report', $id), [
+            'headers' => ['Accept' => 'application/pdf'],
+        ]));
+    }
+
+    /**
+     * Download the certificate of completion
+     *
+     * Who signed, when, from which IP address and location, how each signer was verified, and the hashes that tie it to the document and its audit trail. The same pages are at the end of the signed PDF. 409 NOT_READY until the document is COMPLETED.
+     *
+     * Scopes: documents:download.
+     *
+     * `GET /api/v1/documents/{id}/certificate` (documents.downloadCertificate)
+     *
+     * @throws \PactivaSign\Exception\PactivaException
+     */
+    public function downloadCertificate(string $id): Download
+    {
+        return new Download($this->transport->send('GET', self::path('/api/v1/documents/%s/certificate', $id), [
             'headers' => ['Accept' => 'application/pdf'],
         ]));
     }

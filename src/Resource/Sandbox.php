@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Resource;
 
@@ -19,7 +19,7 @@ final class Sandbox extends ApiResource
     /**
      * Sandbox only: emails captured instead of sent, newest first
      *
-     * In the sandbox, email goes only to verified members of your organization. Mail to anyone else (test signers, CC recipients) is captured here instead, with its signing link in actionUrl and one-time codes in code, so tests can complete a signing flow. Returns 404 outside the sandbox.
+     * In the sandbox, email goes only to verified members of your workspace. Mail to anyone else (test signers, CC recipients) is captured here instead, with its signing link in actionUrl and one-time codes in code, so tests can complete a signing flow. Returns 404 outside the sandbox.
      *
      * Scopes: signing:read.
      *
@@ -29,7 +29,7 @@ final class Sandbox extends ApiResource
      *     limit?: int|float,
      *     page?: int|float,
      *     to?: string,
-     *     type?: 'SIGNING_INVITATION'|'OTP'|'REMINDER'|'COMPLETION'|'CARBON_COPY'|'DECLINED'|'ACCOUNT_VERIFICATION'|'VOIDED'|'EXPIRED'|\PactivaSign\Model\SandboxEmailType,
+     *     type?: 'SIGNING_INVITATION'|'OTP'|'REMINDER'|'COMPLETION'|'CARBON_COPY'|'DECLINED'|'ACCOUNT_VERIFICATION'|'VOIDED'|'EXPIRED'|'ACCOUNT_INVITE'|\PactivaSign\Model\SandboxEmailType,
      *     signingRequestId?: string,
      * } $query
      * @return Paginator<SandboxEmail>

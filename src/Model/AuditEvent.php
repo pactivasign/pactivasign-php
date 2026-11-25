@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -10,7 +10,7 @@ final class AuditEvent extends Model
 {
     public readonly string $id;
 
-    public readonly string $organizationId;
+    public readonly string $workspaceId;
 
     public readonly ?string $documentId;
 
@@ -59,7 +59,7 @@ final class AuditEvent extends Model
         parent::__construct($data);
 
         $this->id = $this->string('id');
-        $this->organizationId = $this->string('organizationId');
+        $this->workspaceId = $this->string('workspaceId');
         $this->documentId = $this->has('documentId') ? $this->string('documentId') : null;
         $this->signingRequestId = $this->has('signingRequestId') ? $this->string('signingRequestId') : null;
         $this->signerId = $this->has('signerId') ? $this->string('signerId') : null;

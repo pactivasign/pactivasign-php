@@ -55,14 +55,17 @@ final class Client
 {
     use ClientResources;
 
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.2.0';
 
-    private readonly Environment $environment;
-    private readonly TokenProvider $tokens;
-    private readonly Transport $transport;
+    // Not readonly: withWorkspace() builds a copy that sets them outside the constructor.
+    private Environment $environment;
+    private TokenProvider $tokens;
+    private Transport $transport;
 
     /**
      * @param list<string> $scopes the scopes to request; must be a subset of the client's allowed scopes
+     * @param string|null $workspaceId the workspace to work in, sent as X-Workspace-Id. Needed when the client is
+     *        approved for several workspaces (see `$pactiva->me->get()->workspaces`); optional with one.
      */
     public function __construct(
         Environment|string $environment,
@@ -79,6 +82,7 @@ final class Client
         ?RetryPolicy $retryPolicy = null,
         ?ClockInterface $clock = null,
         ?\Closure $sleep = null,
+        ?string $workspaceId = null,
     ) {
         if (!str_starts_with($clientId, 'pcl_')) {
             throw new ConfigurationException('The client ID should start with "pcl_".');
@@ -120,7 +124,7 @@ final class Client
             $sleep,
         );
 
-        $this->transport = new Transport(
+        $transport = new Transport(
             $this->environment,
             $this->tokens,
             $proofs,
@@ -133,8 +137,36 @@ final class Client
             $userAgent,
             $sleep,
         );
+        if ($workspaceId !== null && trim($workspaceId) === '') {
+            throw new ConfigurationException('The workspace ID must not be empty; leave it out to use the only approved workspace.');
+        }
+        $this->transport = $transport->withWorkspace($workspaceId);
 
         $this->initializeResources($this->transport);
+    }
+
+    /**
+     * A client that works in another workspace, for integrations approved for several:
+     * `$pactiva->withWorkspace($id)->envelopes->create(...)`. It shares this client's token and cache.
+     */
+    public function withWorkspace(string $workspaceId): static
+    {
+        if (trim($workspaceId) === '') {
+            throw new ConfigurationException('The workspace ID must not be empty.');
+        }
+        $copy = (new \ReflectionClass(static::class))->newInstanceWithoutConstructor();
+        $copy->environment = $this->environment;
+        $copy->tokens = $this->tokens;
+        $copy->transport = $this->transport->withWorkspace($workspaceId);
+        $copy->initializeResources($copy->transport);
+
+        return $copy;
+    }
+
+    /** The workspace this client sends as X-Workspace-Id, or null to let the API use the only approved one. */
+    public function workspaceId(): ?string
+    {
+        return $this->transport->workspaceId();
     }
 
     public function environment(): Environment

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -34,10 +34,14 @@ enum ErrorCode: string
     case PlanLimitExceeded = 'PLAN_LIMIT_EXCEEDED';
     case SubscriptionInactive = 'SUBSCRIPTION_INACTIVE';
     case SigningRequestDeclined = 'SIGNING_REQUEST_DECLINED';
+    case SigningDocumentChanged = 'SIGNING_DOCUMENT_CHANGED';
     case InvalidState = 'INVALID_STATE';
     case NotReady = 'NOT_READY';
     case IdempotencyInProgress = 'IDEMPOTENCY_IN_PROGRESS';
     case IdempotencyKeyReused = 'IDEMPOTENCY_KEY_REUSED';
+    case CaptchaFailed = 'CAPTCHA_FAILED';
+    case EmailNotAllowed = 'EMAIL_NOT_ALLOWED';
+    case WorkspaceRequired = 'WORKSPACE_REQUIRED';
 
     /** A value added to the API after this SDK version. The raw value is in the model's toArray(). */
     case Unknown = 'unknown';

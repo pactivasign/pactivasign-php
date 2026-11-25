@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -29,6 +29,11 @@ final class Envelope extends Model
     public readonly bool $sequential;
 
     public readonly ?\DateTimeImmutable $expiresAt;
+
+    /**
+     * The sender's note to recipients.
+     */
+    public readonly ?string $message;
 
     public readonly \DateTimeImmutable $createdAt;
 
@@ -83,6 +88,7 @@ final class Envelope extends Model
         $this->metadata = $this->stringMap('metadata');
         $this->sequential = $this->bool('sequential');
         $this->expiresAt = $this->has('expiresAt') ? $this->date('expiresAt') : null;
+        $this->message = $this->has('message') ? $this->string('message') : null;
         $this->createdAt = $this->date('createdAt');
         $this->updatedAt = $this->date('updatedAt');
         $this->completedAt = $this->has('completedAt') ? $this->date('completedAt') : null;

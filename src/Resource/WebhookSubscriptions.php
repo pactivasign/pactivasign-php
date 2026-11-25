@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Resource;
 
@@ -43,6 +43,7 @@ final class WebhookSubscriptions extends ApiResource
      *     url: string,
      *     eventTypes: list<'envelope.sent'|'envelope.completed'|'envelope.declined'|'envelope.voided'|'envelope.expired'|'recipient.delivered'|'recipient.delivery_failed'|'recipient.viewed'|'recipient.signed'|'recipient.declined'|\PactivaSign\Model\WebhookEventType>,
      *     description?: string,
+     *     workspaceIds?: list<string>,
      * } $params
      * @throws \PactivaSign\Exception\PactivaException
      */

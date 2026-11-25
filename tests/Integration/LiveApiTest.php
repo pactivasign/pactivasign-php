@@ -12,7 +12,7 @@ use PactivaSign\Exception\PermissionException;
 use PactivaSign\Model\AuditEventType;
 use PactivaSign\Model\DocumentStatus;
 use PactivaSign\Model\EnvelopeStatus;
-use PactivaSign\Model\OrganizationStatus;
+use PactivaSign\Model\WorkspaceStatus;
 use PactivaSign\Model\SandboxEmailType;
 use PactivaSign\Key\LocalKey;
 use PactivaSign\SystemClock;
@@ -74,7 +74,7 @@ final class LiveApiTest extends TestCase
         $requested = $this->scopes();
         sort($requested);
         self::assertSame($requested, $scopes);
-        self::assertNotSame(OrganizationStatus::Unknown, $me->organization->status);
+        self::assertNotSame(WorkspaceStatus::Unknown, $me->workspace->status);
     }
 
     public function testRawRequestsStillWork(): void

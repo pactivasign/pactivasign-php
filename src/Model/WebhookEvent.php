@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -14,7 +14,15 @@ final class WebhookEvent extends Model
 
     public readonly \DateTimeImmutable $occurredAt;
 
-    public readonly string $organizationId;
+    /**
+     * The workspace the envelope belongs to.
+     */
+    public readonly string $workspaceId;
+
+    /**
+     * The account that owns the workspace. Integrations covering several workspaces can route on workspaceId.
+     */
+    public readonly ?string $accountId;
 
     public readonly WebhookEventData $data;
 
@@ -28,7 +36,8 @@ final class WebhookEvent extends Model
         $this->id = $this->string('id');
         $this->type = $this->enum('type', WebhookEventType::class);
         $this->occurredAt = $this->date('occurredAt');
-        $this->organizationId = $this->string('organizationId');
+        $this->workspaceId = $this->string('workspaceId');
+        $this->accountId = $this->has('accountId') ? $this->string('accountId') : null;
         $this->data = $this->model('data', WebhookEventData::class);
     }
 }

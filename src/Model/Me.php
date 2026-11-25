@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v1.1.1.
+// @generated from openapi/public.json; do not edit. Run `composer generate`. Source: openapi-v2.0.0.
 
 namespace PactivaSign\Model;
 
@@ -15,7 +15,21 @@ final class Me extends Model
      */
     public readonly string $environment;
 
-    public readonly MeOrganization $organization;
+    /**
+     * The workspace this request ran in.
+     */
+    public readonly MeWorkspace $workspace;
+
+    /**
+     * The account that owns the workspace and the integration.
+     */
+    public readonly ?string $accountId;
+
+    /**
+     * For an API key or OAuth client: every workspace it may use. With more than one, send X-Workspace-Id on each request. Empty for dashboard users.
+     * @var list<MeApprovedWorkspace>
+     */
+    public readonly array $workspaces;
 
     /**
      * The calling OAuth client; null otherwise.
@@ -23,7 +37,7 @@ final class Me extends Model
     public readonly ?MeClient $client;
 
     /**
-     * Scopes this token can use right now.
+     * Scopes this token can use right now, in this workspace.
      * @var list<string>
      */
     public readonly array $scopes;
@@ -44,7 +58,9 @@ final class Me extends Model
 
         $this->authKind = $this->string('authKind');
         $this->environment = $this->string('environment');
-        $this->organization = $this->model('organization', MeOrganization::class);
+        $this->workspace = $this->model('workspace', MeWorkspace::class);
+        $this->accountId = $this->has('accountId') ? $this->string('accountId') : null;
+        $this->workspaces = $this->models('workspaces', MeApprovedWorkspace::class);
         $this->client = $this->has('client') ? $this->model('client', MeClient::class) : null;
         $this->scopes = $this->strings('scopes');
         $this->plan = $this->model('plan', MePlan::class);

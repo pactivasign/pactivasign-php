@@ -135,7 +135,7 @@ final class WebhookTest extends TestCase
             'id' => 'evt_new',
             'type' => 'envelope.archived',
             'occurredAt' => '2027-01-01T00:00:00Z',
-            'organizationId' => 'org',
+            'workspaceId' => 'ws',
             'data' => ['envelopeId' => 'e', 'version' => 1, 'status' => 'ARCHIVED', 'externalId' => null, 'metadata' => []],
         ], JSON_THROW_ON_ERROR);
 
