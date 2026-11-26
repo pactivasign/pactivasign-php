@@ -55,7 +55,7 @@ final class Client
 {
     use ClientResources;
 
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.1.1';
 
     private readonly Environment $environment;
     private readonly TokenProvider $tokens;

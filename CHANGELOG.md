@@ -6,6 +6,17 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-26
+
+### Added
+
+- `Environment::production()` and `Environment::PRODUCTION_URL` (`https://api.pactivasign.com`), and a
+  "Going live" section in the README. Nothing else changes: still API contract `openapi-v1.1.1`.
+
+### Fixed
+
+- `openapi/SOURCE.json` names the commit the `openapi-v1.1.1` tag points to.
+
 ## [0.1.0] - 2026-10-26
 
 First public release. Pre-1.0: minor versions may contain breaking changes.

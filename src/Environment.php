@@ -15,6 +15,9 @@ final class Environment
     /** The public sandbox: test signers' email is captured, signed PDFs are watermarked. */
     public const SANDBOX_URL = 'https://pactiva-sandbox-api.pactivasign.com';
 
+    /** Production: real email, legally binding signatures. */
+    public const PRODUCTION_URL = 'https://api.pactivasign.com';
+
     /** Origin of the API, without a trailing slash, e.g. https://api.example.com */
     public readonly string $baseUrl;
 
@@ -37,6 +40,11 @@ final class Environment
     public static function sandbox(): self
     {
         return new self(self::SANDBOX_URL);
+    }
+
+    public static function production(): self
+    {
+        return new self(self::PRODUCTION_URL);
     }
 
     public function tokenEndpoint(): string

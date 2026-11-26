@@ -76,7 +76,7 @@ use PactivaSign\Environment;
 use PactivaSign\Key\LocalKey;
 
 $pactiva = new Client(
-    environment: Environment::sandbox(),           // or 'https://your-api-host'
+    environment: Environment::sandbox(),           // Environment::production() to go live
     clientId: 'pcl_...',
     clientKey: LocalKey::fromFile('/run/secrets/pactivasign-client.jwk', logger: $logger),
     dpopKey: LocalKey::fromFile('/run/secrets/pactivasign-dpop.jwk'),
@@ -136,6 +136,14 @@ $otp = $latest(SandboxEmailType::Otp)?->code;
 ```
 
 Outside the sandbox, `listEmails()` raises `NotFoundException`.
+
+### Going live
+
+Switch to `Environment::production()` (`https://api.pactivasign.com`). The sandbox and production are separate:
+
+- Register a new OAuth client in production, with new keys. Sandbox clients, organizations and documents do
+  not carry over.
+- Tokens are cached per environment, so one shared cache can serve both.
 
 ### Resources
 
